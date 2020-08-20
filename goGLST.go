@@ -120,49 +120,63 @@ func PrintAllExpiredGsls(webapikey string)(gsls steamServer){
 
 
 
-func renewAllTokens(webapikey string)(newList steamServer){
-	var list = getAllGsl(webapikey)
-	var i = 0
-	for i <= len(list.Response.Servers)-1 {
-		if list.Response.Servers[i].IsExpired{
-			renewToken(webapikey, list.Response.Servers[i].Steamid)
+func renewAllTokens(webapikey string, channel chan steamServer, duration time.Duration)() {
+	var first = true
+	for {
+		fmt.Printf("DEBUG!!!!!! %v \n", first)
+		fmt.Printf("[%s] * renewing all tokens periodically [*]\n", time.Now().UTC())
+		var list = getAllGsl(webapikey)
+		var i = 0
+		var tokensRenewed = 0
+		for i <= len(list.Response.Servers)-1 {
+			if list.Response.Servers[i].IsExpired {
+				renewToken(webapikey, list.Response.Servers[i].Steamid)
+				tokensRenewed++
+			}
+			i++
+
 		}
-		i++
+		fmt.Printf("[%s] %d tokens renewed! [*]\n", time.Now().UTC(), tokensRenewed)
+		newList := getAllGsl(webapikey)
+		channel <- newList
+		if !first {
+			fmt.Printf("going to sleep %v \n", duration)
+			time.Sleep(duration)
+		} else {
+			first = false
+		}
 	}
-	newList = getAllGsl(webapikey)
-	return newList
-
-
 
 }
 
 
-
 func main() {
-    val, present := os.LookupEnv("steam_api")
-		if !present {
-			fmt.Println("[*] key not valid [*] ")
-		} else {
+	val, present := os.LookupEnv("steam_api")
+	if !present {
+		fmt.Println("[*] key not valid [*] ")
+	} else {
 		var used []string
-		list := renewAllTokens(val)
+		channel := make(chan steamServer, 10)
+		go renewAllTokens(val, channel, time.Minute * 60 )
+		for list := range channel {
+			list = <-channel
+			http.HandleFunc("/NewToken", func(w http.ResponseWriter, r *http.Request) {
+				for {
+					choice := list.Response.Servers[rand.Intn(len(list.Response.Servers))]
+					if !choice.IsDeleted && !choice.IsExpired && !choice.IsUsed {
+						choice.IsUsed = true
+						json.NewEncoder(w).Encode(choice.LoginToken)
+						used = append(used, choice.Steamid)
+						fmt.Printf("sent token for game: %s. Current list of tokens: %v\n", choice.Steamid, used)
+						break
+					}
+				}
+			})
 
-		 http.HandleFunc("/NewToken", func (w http.ResponseWriter, r *http.Request) {
-			 for {
-			 choice := list.Response.Servers[rand.Intn(len(list.Response.Servers))]
-			 if !choice.IsDeleted && !choice.IsExpired && !choice.IsUsed {
-			 choice.IsUsed = true 
-			 json.NewEncoder(w).Encode(choice.LoginToken)
-			 used = append(used, choice.Steamid)
-			 fmt.Printf("sent token for game: %s. Current list of tokens: %v\n",choice.Steamid,used)
-			 break 
-			 }
-			}
-		})
-
-
-		fmt.Println("[*] listening on port 1337[*]")
-		http.ListenAndServe(":1337", nil)
-		 } 
+			fmt.Println("[*] listening on port 1337[*]")
+			http.ListenAndServe(":1337", nil)
+		}
 
 	}
+}
 
