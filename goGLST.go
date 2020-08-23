@@ -120,11 +120,7 @@ func PrintAllExpiredGsls(webapikey string)(gsls steamServer){
 
 
 
-func renewAllTokens(webapikey string, channel chan steamServer, duration time.Duration)() {
-	var first = true
-	for {
-		fmt.Printf("DEBUG!!!!!! %v \n", first)
-		fmt.Printf("[%s] * renewing all tokens periodically [*]\n", time.Now().UTC())
+func renewAllTokens(webapikey string) steamServer {
 		var list = getAllGsl(webapikey)
 		var i = 0
 		var tokensRenewed = 0
@@ -138,16 +134,9 @@ func renewAllTokens(webapikey string, channel chan steamServer, duration time.Du
 		}
 		fmt.Printf("[%s] %d tokens renewed! [*]\n", time.Now().UTC(), tokensRenewed)
 		newList := getAllGsl(webapikey)
-		channel <- newList
-		if !first {
-			fmt.Printf("going to sleep %v \n", duration)
-			time.Sleep(duration)
-		} else {
-			first = false
-		}
+		return newList
 	}
 
-}
 
 
 func main() {
@@ -155,12 +144,25 @@ func main() {
 	if !present {
 		fmt.Println("[*] key not valid [*] ")
 	} else {
-		var used []string
-		channel := make(chan steamServer, 10)
-		go renewAllTokens(val, channel, time.Minute * 60 )
-		for list := range channel {
-			list = <-channel
-			http.HandleFunc("/NewToken", func(w http.ResponseWriter, r *http.Request) {
+// Tickers use a similar mechanism to timers: a
+	// channel that is sent values. Here we'll use the
+	// `select` builtin on the channel to await the
+	// values as they arrive every 500ms.
+	var used []string
+	ticker := time.NewTicker(1 * time.Hour)
+
+	go func() {
+		for {
+			select {
+			case _ = <-ticker.C:
+				renewAllTokens(val)
+			}
+		}
+	}()
+
+
+http.HandleFunc("/NewToken", func(w http.ResponseWriter, r *http.Request) {
+				list := getAllGsl(val)
 				for {
 					choice := list.Response.Servers[rand.Intn(len(list.Response.Servers))]
 					if !choice.IsDeleted && !choice.IsExpired && !choice.IsUsed {
@@ -175,8 +177,12 @@ func main() {
 
 			fmt.Println("[*] listening on port 1337[*]")
 			http.ListenAndServe(":1337", nil)
+	// Tickers can be stopped like timers. Once a ticker
+	// is stopped it won't receive any more values on its
+	// channel. We'll stop ours after 1600ms.
+		time.Sleep(time.Hour * 1)
 		}
 
 	}
-}
+
 
