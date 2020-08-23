@@ -149,20 +149,21 @@ func main() {
 	// `select` builtin on the channel to await the
 	// values as they arrive every 500ms.
 	var used []string
-	ticker := time.NewTicker(1 * time.Hour)
-
+	ticker := time.NewTicker(1 * time.Minute)
+	list := steamServer{}
+	fmt.Printf("length of list: %d \n", len(list.Response.Servers))
 	go func() {
 		for {
 			select {
 			case _ = <-ticker.C:
-				renewAllTokens(val)
+				list = renewAllTokens(val)
+				fmt.Printf("this is ticker updating list, now list is %d long \n", len(list.Response.Servers))
 			}
 		}
 	}()
 
 
 http.HandleFunc("/NewToken", func(w http.ResponseWriter, r *http.Request) {
-				list := getAllGsl(val)
 				for {
 					choice := list.Response.Servers[rand.Intn(len(list.Response.Servers))]
 					if !choice.IsDeleted && !choice.IsExpired && !choice.IsUsed {
@@ -180,7 +181,7 @@ http.HandleFunc("/NewToken", func(w http.ResponseWriter, r *http.Request) {
 	// Tickers can be stopped like timers. Once a ticker
 	// is stopped it won't receive any more values on its
 	// channel. We'll stop ours after 1600ms.
-		time.Sleep(time.Hour * 1)
+		time.Sleep(time.Minute * 1)
 		}
 
 	}
