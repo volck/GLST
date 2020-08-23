@@ -150,7 +150,7 @@ func main() {
 	// values as they arrive every 500ms.
 	var used []string
 	ticker := time.NewTicker(1 * time.Hour)
-	list := steamServer{}
+	list := renewAllTokens(val)
 	fmt.Printf("length of list: %d \n", len(list.Response.Servers))
 	go func() {
 		for {
