@@ -149,7 +149,7 @@ func main() {
 	// `select` builtin on the channel to await the
 	// values as they arrive every 500ms.
 	var used []string
-	ticker := time.NewTicker(1 * time.Minute)
+	ticker := time.NewTicker(1 * time.Hour)
 	list := steamServer{}
 	fmt.Printf("length of list: %d \n", len(list.Response.Servers))
 	go func() {
@@ -181,7 +181,7 @@ http.HandleFunc("/NewToken", func(w http.ResponseWriter, r *http.Request) {
 	// Tickers can be stopped like timers. Once a ticker
 	// is stopped it won't receive any more values on its
 	// channel. We'll stop ours after 1600ms.
-		time.Sleep(time.Minute * 1)
+		time.Sleep(time.Hour * 1)
 		}
 
 	}
