@@ -87,12 +87,8 @@ func renewToken(webapi string, token string){
 
 func getAllGsl(webapikey string)(steamServer){
 	
-
-   
-	// fmt.Print(string(body))
 	jsonString := doGetRequest("IGameServersService/GetAccountList/v1/", webapikey)
-	// fmt.Print(jsonString)
-	 
+
 	var serverentry steamServer
 	err := json.Unmarshal([]byte(jsonString), &serverentry)
 	if err != nil{
@@ -121,6 +117,7 @@ func PrintAllExpiredGsls(webapikey string)(gsls steamServer){
 
 
 func renewAllTokens(webapikey string) steamServer {
+		fmt.Printf("[%s] grabbing all Gsls [*] \n", time.Now().UTC() )
 		var list = getAllGsl(webapikey)
 		var i = 0
 		var tokensRenewed = 0
@@ -151,13 +148,11 @@ func main() {
 	var used []string
 	ticker := time.NewTicker(1 * time.Hour)
 	list := renewAllTokens(val)
-	fmt.Printf("length of list: %d \n", len(list.Response.Servers))
 	go func() {
 		for {
 			select {
 			case _ = <-ticker.C:
 				list = renewAllTokens(val)
-				fmt.Printf("this is ticker updating list, now list is %d long \n", len(list.Response.Servers))
 			}
 		}
 	}()
