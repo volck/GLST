@@ -1,0 +1,43 @@
+# This is an example .goreleaser.yml file with some sane defaults.
+# Make sure to check the documentation at http://goreleaser.com
+project_name: GLST
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod tidy
+    - go vet -v ./...
+    - go test ./...
+builds:
+    goos:
+      - linux
+    goarch:
+      - amd64
+dockers:
+  -
+    goos: linux
+    goarch: amd64
+    image_templates:
+      - "ghcr.io/volck/GLST:latest"
+      - "ghcr.io/volck/GLST:{{.Version}}"
+    dockerfile: Dockerfile
+    use_buildx: true
+    skip_push: false
+    build_flag_templates:
+      - "--platform=linux/amd64"
+archives:
+  - format: tar.gz
+    id: GLST 
+    name_template: "GLST-{{.Version}}"
+    wrap_in_directory: true
+    files:
+      - LICENSE
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "latest"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
