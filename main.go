@@ -1,12 +1,20 @@
 package main
 
-import "os"
+import (
+	"fmt"
+	"os"
+)
 
 func main() {
 	server := NewServer()
 	server.Routes()
 	server.steamApiKey = os.Getenv("STEAM_WEBAPI")
-	server.gslList = server.getAllGsl(server.steamApiKey)
-	go server.refreshExpiredTokens()
-	server.Run(":1337")
+	if server.steamApiKey != "" {
+		server.gslList = server.getAllGsl(server.steamApiKey)
+		go server.refreshExpiredTokens()
+		server.Run(":1337")
+	} else {
+		fmt.Println("STEAM_WEBAPI not defined")
+		os.Exit(1)
+	}
 }
