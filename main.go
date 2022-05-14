@@ -12,6 +12,7 @@ func main() {
 	if server.steamApiKey != "" {
 		server.gslList = server.getAllGsl(server.steamApiKey)
 		go server.refreshExpiredTokens()
+		go server.getAllGSLReccuring()
 		server.Run(":1337")
 	} else {
 		fmt.Println("STEAM_WEBAPI not defined")
