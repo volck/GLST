@@ -27,6 +27,23 @@ func (s *server) getAllGsl(steamWebapi string) steamServer {
 	return serverentry
 }
 
+
+func (s *server) getAllGSLReccuring() {
+	for {
+		logMsg := fmt.Sprintf(`GLST [%s ] Grabbing all valid tokens`, time.Now().String())
+		s.gslList = s.getAllGsl(s.steamApiKey)
+		sleepPeriod := 5 * time.Minute
+		logMsg = fmt.Sprintf(`GLST [%s ] DONE getting all tokens. Sleeping for %v`, time.Now().String(), sleepPeriod)
+		log.Info(logMsg)
+		time.Sleep(sleepPeriod)
+	}
+
+
+
+}
+
+
+
 func (s *server) getRandomToken(gslList steamServer) glst {
 	chosenToken := glst{}
 	for {
@@ -65,6 +82,7 @@ func (s *server) renewToken(theGLST glst) {
 }
 
 func (s *server) refreshExpiredTokens() {
+
 	for {
 		for _, theGLST := range s.gslList.Response.Servers {
 			if theGLST.IsExpired && !theGLST.IsUsed {
